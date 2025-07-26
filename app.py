@@ -34,6 +34,8 @@ def main():
     server_thread.start()
 
     app = QApplication(sys.argv)
+    app.setApplicationName("Doo-Doo List")
+    app.setApplicationDisplayName("Doo-Doo List")
     web = LoaderWebView()
     sys.exit(app.exec_())
 
