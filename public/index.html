@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DooDoo List</title>
+  <link href="/public/roboto/index.css" rel="stylesheet">
+  <link href="/public/icons/index.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f5f5f5;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    #taskInput {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      margin-bottom: 1rem;
+    }
+
+    .button-bar {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-bottom: 1.5rem;
+      padding: 0;
+    }
+    
+    .button-bar button {
+      margin-left: 0.5rem;
+    }
+    .button-bar button:first-child {
+      margin-left: 0;
+    }
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1565c0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    li input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    li button {
+      background: none;
+      color: #e53935;
+      font-size: 1.2rem;
+      padding: 0.3rem;
+      border: none;
+      cursor: pointer;
+    }
+
+    li button:hover {
+      color: #c62828;
+    }
+
+    #statusMsg {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .material-icons {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>DooDoo List</h1>
+  <input id="taskInput" placeholder="Add task" />
+  <div class="button-bar">
+    <button onclick="addTask()"><span class="material-icons">add</span>Add</button>
+    <button onclick="saveTasks()"><span class="material-icons">save</span>Save</button>
+  </div>
+  <ul id="taskList"></ul>
+  <p id="statusMsg"></p>
+
+  <script>
+    let tasks = [];
+
+    async function fetchTasks() {
+      const res = await fetch('/tasks');
+      tasks = await res.json();
+      displayTasks();
+    }
+
+    function displayTasks() {
+      const ul = document.getElementById('taskList');
+      ul.innerHTML = '';
+      tasks.forEach((t, i) => {
+        const li = document.createElement('li');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = t;
+        input.onchange = () => tasks[i] = input.value;
+        li.appendChild(input);
+        const btn = document.createElement('button');
+        btn.innerHTML = '<span class="material-icons">delete</span>';
+        btn.onclick = () => {
+          tasks.splice(i, 1);
+          displayTasks();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    async function saveTasks() {
+      const msg = document.getElementById('statusMsg');
+      if (tasks.length === 0) {
+        msg.textContent = "Nothing to save.";
+        return;
+      }
+      msg.textContent = "Saving the to-do list...";
+      try {
+        const res = await fetch('/save_tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks })
+        });
+        const data = await res.json();
+        if (data.rewritten) {
+          tasks = data.rewritten;
+          displayTasks();
+          msg.textContent = "Save complete!";
+        } else {
+          msg.textContent = "Save failed.";
+        }
+      } catch {
+        msg.textContent = "Error during save.";
+      }
+    }
+
+    async function addTask() {
+      const input = document.getElementById('taskInput');
+      if (!input.value.trim()) return;
+      tasks.push(input.value.trim());
+      input.value = '';
+      displayTasks();
+    }
+
+    fetchTasks();
+  </script>
+</body>
+</html>
